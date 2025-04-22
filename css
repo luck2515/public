@@ -1,23 +1,13 @@
-/* Minio Inspired Keycloak Login Theme (for Keycloak 16.1.1) */
-
-:root {
-  --minio-bg-color: #002a37;
-  --minio-text-color: #ffffff;
-  --minio-input-border-color: rgba(255, 255, 255, 0.1);
-  --minio-input-focus-border-color: #dfdfdf;
-  --minio-button-border-color: #ffffff;
-  --minio-link-color: #46a5e0;
-  --minio-footer-text-color: rgba(255, 255, 255, 0.4);
-}
+/* Minio Inspired Keycloak Login Theme (for Keycloak 16.1.1 - NO CSS Variables) */
 
 /* --- 全体的なスタイル --- */
 html, body {
   height: 100%;
-  background-color: var(--minio-bg-color) !important;
+  background-color: #002a37 !important; /* Hardcoded value */
 }
 
 body {
-  color: var(--minio-text-color) !important;
+  color: #ffffff !important; /* Hardcoded value */
   font-family: 'Lato', sans-serif; /* Ensure Lato font is loaded */
   display: flex;
   flex-direction: column; /* Ensure footer stays at bottom */
@@ -25,8 +15,8 @@ body {
 }
 
 /* --- ログインコンテナ --- */
-.login-pf-page, /* PatternFly based layout in older versions? */
-#kc-container-wrapper /* Older generic container? */ {
+.login-pf-page,
+#kc-container-wrapper {
   background: none !important;
   flex-grow: 1; /* Take available vertical space */
   display: flex;
@@ -34,47 +24,47 @@ body {
   align-items: center;
 }
 
-#kc-content-wrapper, /* Wraps the main content box */
-.login-pf-page .card-pf /* Card element in PF based themes */ {
+#kc-content-wrapper,
+.login-pf-page .card-pf {
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   width: 80%;
   max-width: 500px;
-  padding: 20px; /* Add some padding inside the card */
+  padding: 20px;
   text-align: center;
-  color: var(--minio-text-color) !important;
+  color: #ffffff !important; /* Hardcoded value */
 }
 
 #kc-header, #kc-header-wrapper {
-  display: none !important; /* Hide default header */
+  display: none !important;
 }
 
 #kc-form, #kc-form-login {
-    width: 100%; /* Ensure form takes full width of its container */
+    width: 100%;
 }
 
 /* --- フォーム要素 --- */
 .form-group {
   margin-bottom: 40px !important;
   position: relative;
-  text-align: center; /* Center items within the group */
+  text-align: center;
 }
 
 /* Label - Floating effect attempt */
 label, .control-label {
   position: absolute;
   left: 0;
-  bottom: 35px; /* Position above the input line initially */
+  bottom: 35px;
   width: 100%;
   text-align: center;
-  color: var(--minio-text-color);
+  color: #ffffff; /* Hardcoded value */
   opacity: 0.7;
   font-size: 13px;
   transition: all 250ms;
   pointer-events: none;
   font-weight: 400;
-  margin-bottom: 0 !important; /* Override default margins */
+  margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
@@ -82,16 +72,16 @@ label, .control-label {
 input[type="text"], input[type="password"], input[type="email"], .form-control {
   background-color: transparent !important;
   border: none !important;
-  border-bottom: 1px solid var(--minio-input-border-color) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; /* Hardcoded value */
   border-radius: 0 !important;
-  color: var(--minio-text-color) !important;
+  color: #ffffff !important; /* Hardcoded value */
   height: 40px !important;
   text-align: center !important;
   padding: 5px !important;
   box-shadow: none !important;
   width: 100% !important;
   font-size: 13px !important;
-  position: relative; /* Make sure input is interactable */
+  position: relative;
   z-index: 1;
 }
 
@@ -99,27 +89,18 @@ input[type="text"], input[type="password"], input[type="email"], .form-control {
 input[type="text"]:focus + label,
 input[type="password"]:focus + label,
 input[type="email"]:focus + label,
-input[type="text"]:not(:placeholder-shown):valid + label, /* Check if non-empty and valid */
+input[type="text"]:not(:placeholder-shown):valid + label,
 input[type="password"]:not(:placeholder-shown):valid + label,
 input[type="email"]:not(:placeholder-shown):valid + label,
-/* Fallback for older browsers/simpler check */
 input[type="text"][value]:not([value=""]) + label,
 input[type="password"][value]:not([value=""]) + label,
 input[type="email"][value]:not([value=""]) + label {
-  bottom: 35px; /* Keep it above */
-  /* Optionally slightly change style */
-  /* font-size: 11px; */
-  /* opacity: 1; */
+  bottom: 35px;
 }
-/* Ensure label doesn't overlap input text */
-input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
-  /* Maybe add slight top padding if needed, but border-bottom focus is main */
-}
-
 
 /* Input field focus underline */
 input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, .form-control:focus {
-  border-bottom-color: var(--minio-input-focus-border-color) !important;
+  border-bottom-color: #dfdfdf !important; /* Hardcoded value */
   box-shadow: none !important;
   outline: none !important;
 }
@@ -129,23 +110,23 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 50px var(--minio-bg-color) inset !important;
-    -webkit-text-fill-color: var(--minio-text-color) !important;
-    caret-color: var(--minio-text-color);
+    -webkit-box-shadow: 0 0 0 50px #002a37 inset !important; /* Hardcoded value */
+    -webkit-text-fill-color: #ffffff !important; /* Hardcoded value */
+    caret-color: #ffffff; /* Hardcoded value */
     transition: background-color 5000s ease-in-out 0s;
 }
 
 /* --- Buttons --- */
-#kc-form-buttons { /* Button container */
+#kc-form-buttons {
   text-align: center;
   margin-top: 20px;
 }
 
-#kc-login, /* Specific ID for login button */
-.btn-primary { /* Bootstrap primary button */
+#kc-login,
+.btn-primary {
   background-color: transparent !important;
-  border: 1px solid var(--minio-button-border-color) !important;
-  color: var(--minio-text-color) !important;
+  border: 1px solid #ffffff !important; /* Hardcoded value */
+  color: #ffffff !important; /* Hardcoded value */
   border-radius: 2px !important;
   opacity: 0.6;
   transition: opacity 300ms;
@@ -155,44 +136,43 @@ input:-webkit-autofill:active {
   font-size: 14px !important;
   font-weight: normal !important;
   box-shadow: none !important;
-  text-transform: none !important; /* Prevent uppercase */
+  text-transform: none !important;
 }
 
 #kc-login:hover, .btn-primary:hover {
   opacity: 1;
   background-color: transparent !important;
-  border-color: var(--minio-button-border-color) !important;
-  color: var(--minio-text-color) !important;
+  border-color: #ffffff !important; /* Hardcoded value */
+  color: #ffffff !important; /* Hardcoded value */
 }
 
 /* --- Links --- */
-#kc-form-options a, /* Links like "Forgot Password?" */
-.link-primary /* Another possible link class */ {
-  color: var(--minio-link-color) !important;
+#kc-form-options a,
+.link-primary {
+  color: #46a5e0 !important; /* Hardcoded value */
   font-size: 13px;
 }
 #kc-form-options a:hover, .link-primary:hover {
-  color: var(--minio-text-color) !important;
+  color: #ffffff !important; /* Hardcoded value */
   text-decoration: none !important;
 }
 
 /* --- Alerts / Messages --- */
-.alert, .alert-error, .alert-warning, .alert-success, #kc-feedback-wrapper /* Generic alert/feedback wrappers */ {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+.alert, .alert-error, .alert-warning, .alert-success, #kc-feedback-wrapper {
+  background-color: rgba(255, 255, 255, 0.1) !important; /* Hardcoded value */
   border: none !important;
-  border-left: 3px solid var(--minio-link-color) !important;
-  color: var(--minio-text-color) !important;
+  border-left: 3px solid #46a5e0 !important; /* Hardcoded value */
+  color: #ffffff !important; /* Hardcoded value */
   margin: 15px 0;
   padding: 10px 15px !important;
   border-radius: 0 !important;
 }
-.alert span, #kc-feedback-wrapper span { /* Text inside alert */
-    color: var(--minio-text-color) !important;
+.alert span, #kc-feedback-wrapper span {
+    color: #ffffff !important; /* Hardcoded value */
 }
-.alert .pficon /* Icon if present */ {
-     color: var(--minio-link-color) !important;
+.alert .pficon {
+     color: #46a5e0 !important; /* Hardcoded value */
 }
-
 
 /* --- Footer --- */
 #kc-footer-wrapper {
@@ -202,42 +182,40 @@ input:-webkit-autofill:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--minio-footer-text-color) !important;
+  color: rgba(255, 255, 255, 0.4) !important; /* Hardcoded value */
   font-size: 20px;
   font-weight: 400;
-  margin-top: auto; /* Push footer to bottom in flex container */
-  flex-shrink: 0; /* Prevent footer from shrinking */
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
-#kc-footer-wrapper ul { /* Hide default footer links */
+#kc-footer-wrapper ul {
   display: none;
 }
 
-/* Add Minio logo to footer */
 #kc-footer-wrapper::after {
   content: '';
   display: block;
   width: 40px;
   height: 40px;
-  background-image: url(../img/logo.svg); /* Adjust path if needed */
+  background-image: url(../img/logo.svg);
   background-size: contain;
   background-repeat: no-repeat;
 }
 
-/* Add Server info to footer (example with fixed text) */
 #kc-footer-wrapper::before {
   content: "Your Server Info"; /* Replace with dynamic value if possible */
   display: block;
-  color: var(--minio-footer-text-color);
+  color: rgba(255, 255, 255, 0.4); /* Hardcoded value */
 }
 
 /* --- Social / Identity Providers --- */
-#kc-social-providers { /* Container */
+#kc-social-providers {
     text-align: center;
     margin-top: 30px;
 }
 
-#kc-social-providers hr { /* "or" divider */
+#kc-social-providers hr {
     display: block;
     margin: 30px auto;
     width: 50px;
@@ -252,12 +230,12 @@ input:-webkit-autofill:active {
     top: -0.7em;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--minio-bg-color);
+    background: #002a37; /* Hardcoded value */
     padding: 0 10px;
     color: grey;
 }
 
-#kc-social-providers ul { /* List containing buttons */
+#kc-social-providers ul {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -267,11 +245,11 @@ input:-webkit-autofill:active {
     margin: 5px;
 }
 
-#kc-social-providers a, /* Social buttons are usually links */
-.btn-social, .zocial /* Common classes for social buttons */ {
+#kc-social-providers a,
+.btn-social, .zocial {
   display: inline-block !important;
-  color: var(--minio-link-color) !important;
-  border: 1px solid var(--minio-link-color) !important;
+  color: #46a5e0 !important; /* Hardcoded value */
+  border: 1px solid #46a5e0 !important; /* Hardcoded value */
   opacity: 0.6;
   font-size: 14px !important;
   background: none !important;
@@ -280,24 +258,23 @@ input:-webkit-autofill:active {
   padding: 10px 20px !important;
   border-radius: 2px !important;
   transition: opacity 300ms;
-  width: auto !important; /* Override fixed widths */
-  height: auto !important; /* Override fixed heights */
-  line-height: normal !important; /* Override line heights */
+  width: auto !important;
+  height: auto !important;
+  line-height: normal !important;
 }
-#kc-social-providers a i, #kc-social-providers a span { /* Icons/text inside social buttons */
-    color: var(--minio-link-color) !important; /* Ensure inner text/icon matches */
+#kc-social-providers a i, #kc-social-providers a span {
+    color: #46a5e0 !important; /* Hardcoded value */
 }
-
 
 #kc-social-providers a:hover, .btn-social:hover, .zocial:hover {
   opacity: 1;
-  color: var(--minio-link-color) !important;
+  color: #46a5e0 !important; /* Hardcoded value */
   background: none !important;
-  border-color: var(--minio-link-color) !important;
+  border-color: #46a5e0 !important; /* Hardcoded value */
 }
 
 /* --- Responsive adjustments --- */
-@media (max-width: 768px) { /* Standard bootstrap breakpoint */
+@media (max-width: 768px) {
   #kc-footer-wrapper {
     flex-direction: column;
     height: auto;
@@ -314,14 +291,14 @@ input:-webkit-autofill:active {
        order: 1;
    }
    #kc-content-wrapper, .login-pf-page .card-pf {
-       width: 90%; /* Slightly wider on small screens */
+       width: 90%;
        padding: 15px;
    }
 }
 
 /* Hide potentially unwanted elements */
-#kc-locale, /* Language selector */
-#kc-info /* Info sidebar */ {
-   /* display: none !important; */ /* Uncomment to hide */
+#kc-locale,
+#kc-info {
+   /* display: none !important; */
 }
 
