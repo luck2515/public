@@ -1,82 +1,85 @@
-/* Minio Inspired Keycloak Login Theme */
+/* Minio Inspired Keycloak Login Theme (for Keycloak 16.1.1) */
 
 :root {
-  --minio-bg-color: #002a37; /* Minioの背景色 */
-  --minio-text-color: #ffffff; /* 基本テキスト色（白） */
+  --minio-bg-color: #002a37;
+  --minio-text-color: #ffffff;
   --minio-input-border-color: rgba(255, 255, 255, 0.1);
   --minio-input-focus-border-color: #dfdfdf;
   --minio-button-border-color: #ffffff;
-  --minio-link-color: #46a5e0; /* リンク色 */
+  --minio-link-color: #46a5e0;
   --minio-footer-text-color: rgba(255, 255, 255, 0.4);
 }
 
 /* --- 全体的なスタイル --- */
-body {
+html, body {
+  height: 100%;
   background-color: var(--minio-bg-color) !important;
+}
+
+body {
   color: var(--minio-text-color) !important;
-  font-family: 'Lato', sans-serif; /* Minioのフォントに合わせる (要フォント読み込み) */
+  font-family: 'Lato', sans-serif; /* Ensure Lato font is loaded */
+  display: flex;
+  flex-direction: column; /* Ensure footer stays at bottom */
+  min-height: 100vh;
 }
 
 /* --- ログインコンテナ --- */
-.login-pf-page {
-  background: none !important; /* Keycloakデフォルト背景を削除 */
-}
-
-#kc-content-wrapper {
-  /* Minioの l-wrap のような中央寄せを再現 */
+.login-pf-page, /* PatternFly based layout in older versions? */
+#kc-container-wrapper /* Older generic container? */ {
+  background: none !important;
+  flex-grow: 1; /* Take available vertical space */
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 110px); /* フッターの高さを考慮 */
 }
 
-#kc-form-wrapper, #kc-info-wrapper {
-  /* Minioの l-wrap のスタイルを適用 */
+#kc-content-wrapper, /* Wraps the main content box */
+.login-pf-page .card-pf /* Card element in PF based themes */ {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   width: 80%;
-  max-width: 500px; /* 最大幅 */
+  max-width: 500px;
+  padding: 20px; /* Add some padding inside the card */
   text-align: center;
+  color: var(--minio-text-color) !important;
+}
+
+#kc-header, #kc-header-wrapper {
+  display: none !important; /* Hide default header */
+}
+
+#kc-form, #kc-form-login {
+    width: 100%; /* Ensure form takes full width of its container */
 }
 
 /* --- フォーム要素 --- */
-#kc-form-login, #kc-register-form, #kc-reset-password-form, #kc-totp-form, #kc-login-update-profile-form {
-  /* 特に追加のスタイルは不要かも */
-}
-
-/* フォームグループ */
-.pf-c-form__group, .form-group {
-  margin-bottom: 40px !important; /* Minioの入力欄間のマージンに合わせる */
+.form-group {
+  margin-bottom: 40px !important;
   position: relative;
+  text-align: center; /* Center items within the group */
 }
 
-/* ラベル */
-.pf-c-form__label, label {
-  /* Minioのフローティングラベル風に調整 */
+/* Label - Floating effect attempt */
+label, .control-label {
   position: absolute;
   left: 0;
-  bottom: 35px; /* 位置調整 */
+  bottom: 35px; /* Position above the input line initially */
   width: 100%;
   text-align: center;
   color: var(--minio-text-color);
   opacity: 0.7;
   font-size: 13px;
   transition: all 250ms;
-  pointer-events: none; /* ラベルがクリックを邪魔しないように */
+  pointer-events: none;
   font-weight: 400;
+  margin-bottom: 0 !important; /* Override default margins */
+  padding-bottom: 0 !important;
 }
 
-/* 入力欄フォーカス時・入力済み時のラベル */
-.pf-c-form-control:focus + .pf-c-form__label,
-.pf-c-form-control:not(:placeholder-shown) + .pf-c-form__label,
-input[type="text"]:focus + label,
-input[type="password"]:focus + label,
-input[type="text"]:valid + label, /* validは値がある場合を示す */
-input[type="password"]:valid + label {
-  bottom: 35px; /* 上に移動したまま (Minioの挙動) */
-  /* 必要ならさらに調整 */
-}
-
-/* 入力フィールド */
-.pf-c-form-control, input[type="text"], input[type="password"], input[type="email"] {
+/* Input field */
+input[type="text"], input[type="password"], input[type="email"], .form-control {
   background-color: transparent !important;
   border: none !important;
   border-bottom: 1px solid var(--minio-input-border-color) !important;
@@ -88,19 +91,40 @@ input[type="password"]:valid + label {
   box-shadow: none !important;
   width: 100% !important;
   font-size: 13px !important;
-  position: relative;
-  z-index: 1; /* ラベルより手前に */
+  position: relative; /* Make sure input is interactable */
+  z-index: 1;
 }
 
-/* 入力フィールドのフォーカス時の下線 */
-.pf-c-form-control:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
-  /* Minioの ig-helpers のようなアニメーションは複雑なので、シンプルなボーダー色変更で代用 */
+/* Label transition when input has value or focus */
+input[type="text"]:focus + label,
+input[type="password"]:focus + label,
+input[type="email"]:focus + label,
+input[type="text"]:not(:placeholder-shown):valid + label, /* Check if non-empty and valid */
+input[type="password"]:not(:placeholder-shown):valid + label,
+input[type="email"]:not(:placeholder-shown):valid + label,
+/* Fallback for older browsers/simpler check */
+input[type="text"][value]:not([value=""]) + label,
+input[type="password"][value]:not([value=""]) + label,
+input[type="email"][value]:not([value=""]) + label {
+  bottom: 35px; /* Keep it above */
+  /* Optionally slightly change style */
+  /* font-size: 11px; */
+  /* opacity: 1; */
+}
+/* Ensure label doesn't overlap input text */
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
+  /* Maybe add slight top padding if needed, but border-bottom focus is main */
+}
+
+
+/* Input field focus underline */
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, .form-control:focus {
   border-bottom-color: var(--minio-input-focus-border-color) !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
-/* Chromeのオートフィル背景色対策 */
+/* Chrome autofill fix */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -108,135 +132,112 @@ input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 50px var(--minio-bg-color) inset !important;
     -webkit-text-fill-color: var(--minio-text-color) !important;
     caret-color: var(--minio-text-color);
-    transition: background-color 5000s ease-in-out 0s; /* 背景色変更を遅らせるハック */
+    transition: background-color 5000s ease-in-out 0s;
 }
 
+/* --- Buttons --- */
+#kc-form-buttons { /* Button container */
+  text-align: center;
+  margin-top: 20px;
+}
 
-/* --- ボタン --- */
-#kc-form-buttons .pf-c-button.pf-m-primary, input[type="submit"] {
-  /* Minioの lw-btn を再現 (ただし円形は難しいかも) */
+#kc-login, /* Specific ID for login button */
+.btn-primary { /* Bootstrap primary button */
   background-color: transparent !important;
   border: 1px solid var(--minio-button-border-color) !important;
   color: var(--minio-text-color) !important;
-  border-radius: 2px !important; /* 円形ではなく四角で */
+  border-radius: 2px !important;
   opacity: 0.6;
   transition: opacity 300ms;
-  width: auto !important; /* 幅は自動調整 */
+  width: auto !important;
+  min-width: 100px;
   padding: 10px 20px !important;
   font-size: 14px !important;
   font-weight: normal !important;
   box-shadow: none !important;
-  margin-top: 20px; /* フォームからのマージン */
+  text-transform: none !important; /* Prevent uppercase */
 }
 
-#kc-form-buttons .pf-c-button.pf-m-primary:hover, input[type="submit"]:hover {
+#kc-login:hover, .btn-primary:hover {
   opacity: 1;
   background-color: transparent !important;
   border-color: var(--minio-button-border-color) !important;
   color: var(--minio-text-color) !important;
 }
 
-/* アイコンの再現は難しいので省略 */
-
-/* --- リンク --- */
-a {
+/* --- Links --- */
+#kc-form-options a, /* Links like "Forgot Password?" */
+.link-primary /* Another possible link class */ {
   color: var(--minio-link-color) !important;
+  font-size: 13px;
 }
-a:hover {
+#kc-form-options a:hover, .link-primary:hover {
   color: var(--minio-text-color) !important;
   text-decoration: none !important;
 }
 
-/* --- アラート/メッセージ --- */
-.pf-c-alert, .alert {
-  /* 必要に応じてMinio風に調整 */
+/* --- Alerts / Messages --- */
+.alert, .alert-error, .alert-warning, .alert-success, #kc-feedback-wrapper /* Generic alert/feedback wrappers */ {
   background-color: rgba(255, 255, 255, 0.1) !important;
-  border-color: var(--minio-link-color) !important;
+  border: none !important;
+  border-left: 3px solid var(--minio-link-color) !important;
   color: var(--minio-text-color) !important;
+  margin: 15px 0;
+  padding: 10px 15px !important;
+  border-radius: 0 !important;
 }
-.pf-c-alert__title, .alert-error span {
+.alert span, #kc-feedback-wrapper span { /* Text inside alert */
     color: var(--minio-text-color) !important;
 }
+.alert .pficon /* Icon if present */ {
+     color: var(--minio-link-color) !important;
+}
 
 
-/* --- フッター --- */
+/* --- Footer --- */
 #kc-footer-wrapper {
-  /* Minioの l-footer を再現 */
-  height: 110px;
   padding: 0 50px;
+  height: 110px;
   width: 100%;
-  position: absolute;
-  bottom: 0;
-  left: 0;
   display: flex;
-  justify-content: space-between; /* ロゴとサーバー名を両端に */
-  align-items: center; /* 垂直中央揃え */
+  justify-content: space-between;
+  align-items: center;
   color: var(--minio-footer-text-color) !important;
   font-size: 20px;
   font-weight: 400;
+  margin-top: auto; /* Push footer to bottom in flex container */
+  flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
-/* Keycloakのデフォルトフッターリンクを非表示にするか、調整 */
-#kc-footer-wrapper ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
+#kc-footer-wrapper ul { /* Hide default footer links */
+  display: none;
 }
-#kc-footer-wrapper ul li {
-  margin: 0 10px;
-}
-/* 必要なら非表示に */
-/* #kc-footer-wrapper ul { display: none; } */
 
-/* Minioロゴの追加 (Keycloakテーマのimgディレクトリにlogo.svgを配置想定) */
-#kc-logo-wrapper { /* Keycloakのヘッダーロゴ部分をフッターに流用する例 */
-  display: none; /* デフォルトヘッダーロゴは隠す */
-}
-#kc-footer-wrapper::after { /* フッター右側にロゴを表示 */
+/* Add Minio logo to footer */
+#kc-footer-wrapper::after {
   content: '';
   display: block;
   width: 40px;
   height: 40px;
-  background-image: url(../img/logo.svg); /* テーマ内の画像パス */
+  background-image: url(../img/logo.svg); /* Adjust path if needed */
   background-size: contain;
   background-repeat: no-repeat;
 }
 
-/* サーバー名（レルム名など）をフッター左側に表示 */
-#kc-footer-wrapper::before { /* フッター左側に表示 */
-  content: attr(data-realm); /* レルム名を動的に表示したい場合、テンプレート側でdata属性付与が必要かも */
-  /* 固定文字列の場合: content: "Your Server Info"; */
+/* Add Server info to footer (example with fixed text) */
+#kc-footer-wrapper::before {
+  content: "Your Server Info"; /* Replace with dynamic value if possible */
   display: block;
   color: var(--minio-footer-text-color);
-  font-size: 20px;
-  font-weight: 400;
 }
 
-/* --- OpenID Connectボタン (もし表示される場合) --- */
-.zocial, .btn-social { /* Keycloakのソーシャル/IDPボタン */
-  /* Minioの openid-btn を再現 */
-  display: inline-block !important;
-  color: var(--minio-link-color) !important;
-  margin-top: 30px !important;
-  border: 1px solid var(--minio-link-color) !important;
-  opacity: 0.6;
-  font-size: 14px !important;
-  background: none !important;
-  box-shadow: none !important;
-  text-transform: none !important;
-  padding: 10px 20px !important;
+/* --- Social / Identity Providers --- */
+#kc-social-providers { /* Container */
+    text-align: center;
+    margin-top: 30px;
 }
 
-.zocial:hover, .btn-social:hover {
-  opacity: 1;
-  color: var(--minio-link-color) !important;
-  background: none !important;
-  border-color: var(--minio-link-color) !important;
-}
-
-/* "or" の区切り線 */
-#kc-social-providers hr {
+#kc-social-providers hr { /* "or" divider */
     display: block;
     margin: 30px auto;
     width: 50px;
@@ -245,42 +246,82 @@ a:hover {
     position: relative;
     overflow: visible;
 }
-
 #kc-social-providers hr::before {
     content: "or";
     position: absolute;
     top: -0.7em;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--minio-bg-color); /* 背景色で線を隠す */
+    background: var(--minio-bg-color);
     padding: 0 10px;
     color: grey;
 }
 
-
-/* --- ヘッダー --- */
-/* Keycloakのデフォルトヘッダーは基本的に不要なので隠す */
-#kc-header, #kc-header-wrapper {
-  display: none !important;
+#kc-social-providers ul { /* List containing buttons */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#kc-social-providers li {
+    display: inline-block;
+    margin: 5px;
 }
 
-/* --- レスポンシブ調整 (必要に応じて) --- */
-@media (max-width: 768px) { /* Keycloakのブレークポイントに合わせる */
+#kc-social-providers a, /* Social buttons are usually links */
+.btn-social, .zocial /* Common classes for social buttons */ {
+  display: inline-block !important;
+  color: var(--minio-link-color) !important;
+  border: 1px solid var(--minio-link-color) !important;
+  opacity: 0.6;
+  font-size: 14px !important;
+  background: none !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  padding: 10px 20px !important;
+  border-radius: 2px !important;
+  transition: opacity 300ms;
+  width: auto !important; /* Override fixed widths */
+  height: auto !important; /* Override fixed heights */
+  line-height: normal !important; /* Override line heights */
+}
+#kc-social-providers a i, #kc-social-providers a span { /* Icons/text inside social buttons */
+    color: var(--minio-link-color) !important; /* Ensure inner text/icon matches */
+}
+
+
+#kc-social-providers a:hover, .btn-social:hover, .zocial:hover {
+  opacity: 1;
+  color: var(--minio-link-color) !important;
+  background: none !important;
+  border-color: var(--minio-link-color) !important;
+}
+
+/* --- Responsive adjustments --- */
+@media (max-width: 768px) { /* Standard bootstrap breakpoint */
   #kc-footer-wrapper {
-    flex-direction: column; /* 縦並びに */
-    height: auto; /* 高さを自動に */
+    flex-direction: column;
+    height: auto;
     padding: 20px;
-    position: relative; /* absolute解除 */
   }
   #kc-footer-wrapper::before, #kc-footer-wrapper::after {
       margin-bottom: 10px;
   }
-  #kc-footer-wrapper::before {
-      order: 2; /* サーバー名を下に */
+   #kc-footer-wrapper::before {
+      order: 2;
       font-size: 15px;
   }
    #kc-footer-wrapper::after {
-       order: 1; /* ロゴを上に */
+       order: 1;
    }
+   #kc-content-wrapper, .login-pf-page .card-pf {
+       width: 90%; /* Slightly wider on small screens */
+       padding: 15px;
+   }
+}
+
+/* Hide potentially unwanted elements */
+#kc-locale, /* Language selector */
+#kc-info /* Info sidebar */ {
+   /* display: none !important; */ /* Uncomment to hide */
 }
 
