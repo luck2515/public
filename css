@@ -1,0 +1,286 @@
+/* Minio Inspired Keycloak Login Theme */
+
+:root {
+  --minio-bg-color: #002a37; /* Minioの背景色 */
+  --minio-text-color: #ffffff; /* 基本テキスト色（白） */
+  --minio-input-border-color: rgba(255, 255, 255, 0.1);
+  --minio-input-focus-border-color: #dfdfdf;
+  --minio-button-border-color: #ffffff;
+  --minio-link-color: #46a5e0; /* リンク色 */
+  --minio-footer-text-color: rgba(255, 255, 255, 0.4);
+}
+
+/* --- 全体的なスタイル --- */
+body {
+  background-color: var(--minio-bg-color) !important;
+  color: var(--minio-text-color) !important;
+  font-family: 'Lato', sans-serif; /* Minioのフォントに合わせる (要フォント読み込み) */
+}
+
+/* --- ログインコンテナ --- */
+.login-pf-page {
+  background: none !important; /* Keycloakデフォルト背景を削除 */
+}
+
+#kc-content-wrapper {
+  /* Minioの l-wrap のような中央寄せを再現 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 110px); /* フッターの高さを考慮 */
+}
+
+#kc-form-wrapper, #kc-info-wrapper {
+  /* Minioの l-wrap のスタイルを適用 */
+  width: 80%;
+  max-width: 500px; /* 最大幅 */
+  text-align: center;
+}
+
+/* --- フォーム要素 --- */
+#kc-form-login, #kc-register-form, #kc-reset-password-form, #kc-totp-form, #kc-login-update-profile-form {
+  /* 特に追加のスタイルは不要かも */
+}
+
+/* フォームグループ */
+.pf-c-form__group, .form-group {
+  margin-bottom: 40px !important; /* Minioの入力欄間のマージンに合わせる */
+  position: relative;
+}
+
+/* ラベル */
+.pf-c-form__label, label {
+  /* Minioのフローティングラベル風に調整 */
+  position: absolute;
+  left: 0;
+  bottom: 35px; /* 位置調整 */
+  width: 100%;
+  text-align: center;
+  color: var(--minio-text-color);
+  opacity: 0.7;
+  font-size: 13px;
+  transition: all 250ms;
+  pointer-events: none; /* ラベルがクリックを邪魔しないように */
+  font-weight: 400;
+}
+
+/* 入力欄フォーカス時・入力済み時のラベル */
+.pf-c-form-control:focus + .pf-c-form__label,
+.pf-c-form-control:not(:placeholder-shown) + .pf-c-form__label,
+input[type="text"]:focus + label,
+input[type="password"]:focus + label,
+input[type="text"]:valid + label, /* validは値がある場合を示す */
+input[type="password"]:valid + label {
+  bottom: 35px; /* 上に移動したまま (Minioの挙動) */
+  /* 必要ならさらに調整 */
+}
+
+/* 入力フィールド */
+.pf-c-form-control, input[type="text"], input[type="password"], input[type="email"] {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--minio-input-border-color) !important;
+  border-radius: 0 !important;
+  color: var(--minio-text-color) !important;
+  height: 40px !important;
+  text-align: center !important;
+  padding: 5px !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  position: relative;
+  z-index: 1; /* ラベルより手前に */
+}
+
+/* 入力フィールドのフォーカス時の下線 */
+.pf-c-form-control:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
+  /* Minioの ig-helpers のようなアニメーションは複雑なので、シンプルなボーダー色変更で代用 */
+  border-bottom-color: var(--minio-input-focus-border-color) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Chromeのオートフィル背景色対策 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 50px var(--minio-bg-color) inset !important;
+    -webkit-text-fill-color: var(--minio-text-color) !important;
+    caret-color: var(--minio-text-color);
+    transition: background-color 5000s ease-in-out 0s; /* 背景色変更を遅らせるハック */
+}
+
+
+/* --- ボタン --- */
+#kc-form-buttons .pf-c-button.pf-m-primary, input[type="submit"] {
+  /* Minioの lw-btn を再現 (ただし円形は難しいかも) */
+  background-color: transparent !important;
+  border: 1px solid var(--minio-button-border-color) !important;
+  color: var(--minio-text-color) !important;
+  border-radius: 2px !important; /* 円形ではなく四角で */
+  opacity: 0.6;
+  transition: opacity 300ms;
+  width: auto !important; /* 幅は自動調整 */
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+  font-weight: normal !important;
+  box-shadow: none !important;
+  margin-top: 20px; /* フォームからのマージン */
+}
+
+#kc-form-buttons .pf-c-button.pf-m-primary:hover, input[type="submit"]:hover {
+  opacity: 1;
+  background-color: transparent !important;
+  border-color: var(--minio-button-border-color) !important;
+  color: var(--minio-text-color) !important;
+}
+
+/* アイコンの再現は難しいので省略 */
+
+/* --- リンク --- */
+a {
+  color: var(--minio-link-color) !important;
+}
+a:hover {
+  color: var(--minio-text-color) !important;
+  text-decoration: none !important;
+}
+
+/* --- アラート/メッセージ --- */
+.pf-c-alert, .alert {
+  /* 必要に応じてMinio風に調整 */
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--minio-link-color) !important;
+  color: var(--minio-text-color) !important;
+}
+.pf-c-alert__title, .alert-error span {
+    color: var(--minio-text-color) !important;
+}
+
+
+/* --- フッター --- */
+#kc-footer-wrapper {
+  /* Minioの l-footer を再現 */
+  height: 110px;
+  padding: 0 50px;
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between; /* ロゴとサーバー名を両端に */
+  align-items: center; /* 垂直中央揃え */
+  color: var(--minio-footer-text-color) !important;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+/* Keycloakのデフォルトフッターリンクを非表示にするか、調整 */
+#kc-footer-wrapper ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+#kc-footer-wrapper ul li {
+  margin: 0 10px;
+}
+/* 必要なら非表示に */
+/* #kc-footer-wrapper ul { display: none; } */
+
+/* Minioロゴの追加 (Keycloakテーマのimgディレクトリにlogo.svgを配置想定) */
+#kc-logo-wrapper { /* Keycloakのヘッダーロゴ部分をフッターに流用する例 */
+  display: none; /* デフォルトヘッダーロゴは隠す */
+}
+#kc-footer-wrapper::after { /* フッター右側にロゴを表示 */
+  content: '';
+  display: block;
+  width: 40px;
+  height: 40px;
+  background-image: url(../img/logo.svg); /* テーマ内の画像パス */
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* サーバー名（レルム名など）をフッター左側に表示 */
+#kc-footer-wrapper::before { /* フッター左側に表示 */
+  content: attr(data-realm); /* レルム名を動的に表示したい場合、テンプレート側でdata属性付与が必要かも */
+  /* 固定文字列の場合: content: "Your Server Info"; */
+  display: block;
+  color: var(--minio-footer-text-color);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+/* --- OpenID Connectボタン (もし表示される場合) --- */
+.zocial, .btn-social { /* Keycloakのソーシャル/IDPボタン */
+  /* Minioの openid-btn を再現 */
+  display: inline-block !important;
+  color: var(--minio-link-color) !important;
+  margin-top: 30px !important;
+  border: 1px solid var(--minio-link-color) !important;
+  opacity: 0.6;
+  font-size: 14px !important;
+  background: none !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  padding: 10px 20px !important;
+}
+
+.zocial:hover, .btn-social:hover {
+  opacity: 1;
+  color: var(--minio-link-color) !important;
+  background: none !important;
+  border-color: var(--minio-link-color) !important;
+}
+
+/* "or" の区切り線 */
+#kc-social-providers hr {
+    display: block;
+    margin: 30px auto;
+    width: 50px;
+    border: none;
+    border-top: 1px solid grey;
+    position: relative;
+    overflow: visible;
+}
+
+#kc-social-providers hr::before {
+    content: "or";
+    position: absolute;
+    top: -0.7em;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--minio-bg-color); /* 背景色で線を隠す */
+    padding: 0 10px;
+    color: grey;
+}
+
+
+/* --- ヘッダー --- */
+/* Keycloakのデフォルトヘッダーは基本的に不要なので隠す */
+#kc-header, #kc-header-wrapper {
+  display: none !important;
+}
+
+/* --- レスポンシブ調整 (必要に応じて) --- */
+@media (max-width: 768px) { /* Keycloakのブレークポイントに合わせる */
+  #kc-footer-wrapper {
+    flex-direction: column; /* 縦並びに */
+    height: auto; /* 高さを自動に */
+    padding: 20px;
+    position: relative; /* absolute解除 */
+  }
+  #kc-footer-wrapper::before, #kc-footer-wrapper::after {
+      margin-bottom: 10px;
+  }
+  #kc-footer-wrapper::before {
+      order: 2; /* サーバー名を下に */
+      font-size: 15px;
+  }
+   #kc-footer-wrapper::after {
+       order: 1; /* ロゴを上に */
+   }
+}
+
