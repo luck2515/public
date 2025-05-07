@@ -23,6 +23,9 @@ import InputGroup from "./InputGroup"
 import web from "../web"
 import { Redirect, Link } from "react-router-dom"
 import OpenIDLoginButton from './OpenIDLoginButton'
+import { getRandomString } from "../utils"
+import storage from "local-storage-fallback"
+import { OPEN_ID_NONCE_KEY } from './utils'
 
 export class Login extends React.Component {
   constructor(props) {
@@ -86,6 +89,11 @@ export class Login extends React.Component {
   }
 
   componentDidMount() {
+    // oauth_callbackページにいる場合は自動リダイレクトしない
+    if (window.location.pathname.includes('oauth_callback')) {
+      return
+    }
+
     web.GetDiscoveryDoc().then(({ DiscoveryDoc, clientId }) => {
       this.setState({
         clientId,
@@ -97,7 +105,12 @@ export class Login extends React.Component {
           const authEp = this.state.discoveryDoc.authorization_endpoint
           const authScopes = this.state.discoveryDoc.scopes_supported
           const redirectURL = window.location.origin + "/login/oauth_callback"
-          const authorizationUrl = `${authEp}?client_id=${this.state.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectURL)}&scope=${authScopes.join(' ')}`
+          
+          // Store nonce in localstorage to check again after the redirect
+          const nonce = getRandomString(16)
+          storage.setItem(OPEN_ID_NONCE_KEY, nonce)
+          
+          const authorizationUrl = `${authEp}?client_id=${this.state.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectURL)}&scope=${authScopes.join(' ')}&nonce=${nonce}`
           
           // Keycloakへ自動的にリダイレクト
           window.location.href = authorizationUrl
