@@ -25,7 +25,7 @@ import { Redirect, Link } from "react-router-dom"
 import OpenIDLoginButton from './OpenIDLoginButton'
 import { getRandomString } from "../utils"
 import storage from "local-storage-fallback"
-import { OPEN_ID_NONCE_KEY } from './utils'
+import { buildOpenIDAuthURL, OPEN_ID_NONCE_KEY } from './utils'
 
 export class Login extends React.Component {
   constructor(props) {
@@ -89,33 +89,34 @@ export class Login extends React.Component {
   }
 
   componentDidMount() {
-    // oauth_callbackページにいる場合は自動リダイレクトしない
-    if (window.location.pathname.includes('oauth_callback')) {
-      return
-    }
+    web.GetDiscoveryDoc().then(response => {
+      console.log("GetDiscoveryDoc response", response)
+      if(response && response.DiscoveryDoc && response.clientId) {
+        const {DiscoveryDoc, clientId} = response
+        this.setState({
+          clientId,
+          discoveryDoc: DiscoveryDoc
+        });
 
-    web.GetDiscoveryDoc().then(({ DiscoveryDoc, clientId }) => {
-      this.setState({
-        clientId,
-        discoveryDoc: DiscoveryDoc
-      }, () => {
-        // OpenID情報が取得できたら自動的にリダイレクト
-        if (this.state.discoveryDoc && this.state.discoveryDoc.authorization_endpoint && this.state.clientId) {
-          // OpenIDLoginButtonのリダイレクト処理を直接呼び出す
-          const authEp = this.state.discoveryDoc.authorization_endpoint
-          const authScopes = this.state.discoveryDoc.scopes_supported
-          const redirectURL = window.location.origin + "/login/oauth_callback"
-          
-          // Store nonce in localstorage to check again after the redirect
+        if(DiscoveryDoc.authorization_endpoint) {
+          const authEp = DiscoveryDoc.authorization_endpoint
+          const authScopes = DiscoveryDoc.scopes_supported
+          const redirectURI = window.location.href.split("#")[0]
+          redirectURI += redirectURI.endsWith("/") ? "openid" : "/openid"
+
           const nonce = getRandomString(16)
           storage.setItem(OPEN_ID_NONCE_KEY, nonce)
-          
-          const authorizationUrl = `${authEp}?client_id=${this.state.clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectURL)}&scope=${authScopes.join(' ')}&nonce=${nonce}`
-          
-          // Keycloakへ自動的にリダイレクト
-          window.location.href = authorizationUrl
+
+          const authURL = buildOpenIDAuthURL(authEp, authScopes, redirectURI, clientId, nonce)
+          window.location.href = authURL
+        }else{
+          console.warn("Discovery document received, but 'authorization_endpoint' is missing")
         }
-      })
+      }else{
+        console.warn("GetDiscoveryDoc response is missing expected properties (DiscoveryDoc or clientId)", response)
+      }
+    }).catch(error => {
+      console.error("failed to get discovery document", error)
     })
   }
 
