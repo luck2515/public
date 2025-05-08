@@ -38,7 +38,8 @@ export class Login extends React.Component {
       secretKey: "",
       discoveryDoc: {},
       clientId: "",
-      redirectToOpenID: false
+      redirectToOpenID: false,
+      isLoading: true  // ローディング状態を追加
     }
   }
 
@@ -94,6 +95,12 @@ export class Login extends React.Component {
   }
 
   componentDidMount() {
+    // 早期にリダイレクト処理を行うため、非同期処理をすぐに開始
+    this.initializeOpenIDAuth();
+  }
+
+  // OpenID認証を初期化する処理を別メソッドに分離
+  initializeOpenIDAuth() {
     web.GetDiscoveryDoc().then(response => {
       console.log("GetDiscoveryDoc response", response)
       if(response && response.DiscoveryDoc && response.clientId) {
@@ -103,62 +110,84 @@ export class Login extends React.Component {
           discoveryDoc: DiscoveryDoc
         });
 
+        // OpenIDリダイレクトを実行できる状態か確認
+        const canRedirectToOpenID = DiscoveryDoc.authorization_endpoint && 
+                                   !this.props.skipAutoRedirect;
+
         // ログアウトフラグをチェックして、リダイレクト処理を制御する
-        const isLoggedOut = storage.getItem(LOGOUT_FLAG_KEY) === 'true'
+        const isLoggedOut = storage.getItem(LOGOUT_FLAG_KEY) === 'true';
 
-        if(DiscoveryDoc.authorization_endpoint && !isLoggedOut) {
-          // 通常のログイン（ログアウト状態ではない）
-          const authEp = DiscoveryDoc.authorization_endpoint
-          const authScopes = DiscoveryDoc.scopes_supported
-          const redirectURI = window.location.href.split("#")[0]
-          const finalRedirectURI = redirectURI + (redirectURI.endsWith("/") ? "openid" : "/openid")
+        if (canRedirectToOpenID) {
+          // リダイレクトURLを準備
+          const authEp = DiscoveryDoc.authorization_endpoint;
+          const authScopes = DiscoveryDoc.scopes_supported;
+          const redirectURI = window.location.href.split("#")[0];
+          const finalRedirectURI = redirectURI + (redirectURI.endsWith("/") ? "openid" : "/openid");
 
-          const nonce = getRandomString(16)
-          storage.setItem(OPEN_ID_NONCE_KEY, nonce)
+          const nonce = getRandomString(16);
+          storage.setItem(OPEN_ID_NONCE_KEY, nonce);
 
-          const authURL = buildOpenIDAuthURL(authEp, authScopes, finalRedirectURI, clientId, nonce)
-          window.location.href = authURL
-        } else if(DiscoveryDoc.authorization_endpoint && isLoggedOut) {
-          // ログアウト後の再ログイン（明示的にKeycloakのログイン画面に遷移する）
-          const authEp = DiscoveryDoc.authorization_endpoint
-          const authScopes = DiscoveryDoc.scopes_supported
-          const redirectURI = window.location.href.split("#")[0]
-          const finalRedirectURI = redirectURI + (redirectURI.endsWith("/") ? "openid" : "/openid")
+          let authURL = buildOpenIDAuthURL(authEp, authScopes, finalRedirectURI, clientId, nonce);
+          
+          // ログアウト後なら強制的にKeycloakのログイン画面に遷移するパラメータを追加
+          if (isLoggedOut) {
+            // ログアウトフラグを削除（次回は通常のフローに戻る）
+            storage.removeItem(LOGOUT_FLAG_KEY);
+            authURL += "&prompt=login";
+          }
 
-          const nonce = getRandomString(16)
-          storage.setItem(OPEN_ID_NONCE_KEY, nonce)
-
-          // ログアウトフラグを削除（次回は通常のフローに戻る）
-          storage.removeItem(LOGOUT_FLAG_KEY)
-
-          // 強制的にKeycloakのログイン画面に遷移するためのパラメータを追加
-          const authURL = buildOpenIDAuthURL(authEp, authScopes, finalRedirectURI, clientId, nonce)
-          window.location.href = authURL + "&prompt=login"
+          // リダイレクト前にレンダリングを避けるため状態を更新
+          this.setState({ redirectToOpenID: true }, () => {
+            // 次のレンダリングサイクルでリダイレクトが発生するのを確認するため小さな遅延を追加
+            setTimeout(() => {
+              window.location.href = authURL;
+            }, 10);
+          });
         } else {
-          console.warn("Discovery document received, but 'authorization_endpoint' is missing")
+          // リダイレクトしない場合はローディング終了
+          this.setState({ isLoading: false });
+          
+          if (!DiscoveryDoc.authorization_endpoint) {
+            console.warn("Discovery document received, but 'authorization_endpoint' is missing");
+          }
         }
       } else {
-        console.warn("GetDiscoveryDoc response is missing expected properties (DiscoveryDoc or clientId)", response)
+        // OpenID情報が取得できなかった場合はローディング終了して通常のログインフォームを表示
+        this.setState({ isLoading: false });
+        console.warn("GetDiscoveryDoc response is missing expected properties (DiscoveryDoc or clientId)", response);
       }
     }).catch(error => {
-      console.error("failed to get discovery document", error)
-    })
+      // エラー時はローディング終了して通常のログインフォームを表示
+      this.setState({ isLoading: false });
+      console.error("failed to get discovery document", error);
+    });
   }
 
   componentWillUnmount() {
     document.body.classList.remove("is-guest")
   }
 
-  render() {
-    const { clearAlert, alert } = this.props
-    if (web.LoggedIn()) {
-      return <Redirect to={"/"} />
-    }
-    let alertBox = <Alert {...alert} onDismiss={clearAlert} />
-    // Make sure you don't show a fading out alert box on the initial web-page load.
-    if (!alert.message) alertBox = ""
+  // ローディング中の表示コンポーネント
+  renderLoading() {
+    return (
+      <div className="login loading-view">
+        <div className="page-load" style={{ position: 'relative', background: 'transparent' }}>
+          <div className="pl-inner">
+            <img src={logo} alt="Loading" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    const showOpenID = Boolean(this.state.discoveryDoc && this.state.discoveryDoc.authorization_endpoint)
+  // 通常のログインフォームを表示するコンポーネント
+  renderLoginForm() {
+    const { clearAlert, alert } = this.props;
+    let alertBox = <Alert {...alert} onDismiss={clearAlert} />;
+    if (!alert.message) alertBox = "";
+
+    const showOpenID = Boolean(this.state.discoveryDoc && this.state.discoveryDoc.authorization_endpoint);
+
     return (
       <div className="login">
         {alertBox}
@@ -220,7 +249,22 @@ export class Login extends React.Component {
           <div className="lf-server">{window.location.host}</div>
         </div>
       </div>
-    )
+    );
+  }
+
+  render() {
+    // すでにログイン済みならリダイレクト
+    if (web.LoggedIn()) {
+      return <Redirect to={"/"} />;
+    }
+
+    // OpenIDリダイレクト中なら最小限の表示に
+    if (this.state.redirectToOpenID || this.state.isLoading) {
+      return this.renderLoading();
+    }
+
+    // 通常のログインフォーム表示
+    return this.renderLoginForm();
   }
 }
 
