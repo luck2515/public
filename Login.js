@@ -27,6 +27,9 @@ import { getRandomString } from "../utils"
 import storage from "local-storage-fallback"
 import { buildOpenIDAuthURL, OPEN_ID_NONCE_KEY } from './utils'
 
+// ログアウト後のリダイレクトを制御するためのストレージキー
+const LOGOUT_FLAG_KEY = 'minioLoggedOut'
+
 export class Login extends React.Component {
   constructor(props) {
     super(props)
@@ -34,7 +37,8 @@ export class Login extends React.Component {
       accessKey: "",
       secretKey: "",
       discoveryDoc: {},
-      clientId: ""
+      clientId: "",
+      redirectToOpenID: false
     }
   }
 
@@ -73,7 +77,8 @@ export class Login extends React.Component {
       .then(res => {
         // Clear alerts from previous login attempts
         clearAlert()
-
+        // ログイン成功したらログアウトフラグを削除
+        storage.removeItem(LOGOUT_FLAG_KEY)
         history.push("/")
       })
       .catch(e => {
@@ -98,21 +103,41 @@ export class Login extends React.Component {
           discoveryDoc: DiscoveryDoc
         });
 
-        if(DiscoveryDoc.authorization_endpoint) {
+        // ログアウトフラグをチェックして、リダイレクト処理を制御する
+        const isLoggedOut = storage.getItem(LOGOUT_FLAG_KEY) === 'true'
+
+        if(DiscoveryDoc.authorization_endpoint && !isLoggedOut) {
+          // 通常のログイン（ログアウト状態ではない）
           const authEp = DiscoveryDoc.authorization_endpoint
           const authScopes = DiscoveryDoc.scopes_supported
           const redirectURI = window.location.href.split("#")[0]
-          redirectURI += redirectURI.endsWith("/") ? "openid" : "/openid"
+          const finalRedirectURI = redirectURI + (redirectURI.endsWith("/") ? "openid" : "/openid")
 
           const nonce = getRandomString(16)
           storage.setItem(OPEN_ID_NONCE_KEY, nonce)
 
-          const authURL = buildOpenIDAuthURL(authEp, authScopes, redirectURI, clientId, nonce)
+          const authURL = buildOpenIDAuthURL(authEp, authScopes, finalRedirectURI, clientId, nonce)
           window.location.href = authURL
-        }else{
+        } else if(DiscoveryDoc.authorization_endpoint && isLoggedOut) {
+          // ログアウト後の再ログイン（明示的にKeycloakのログイン画面に遷移する）
+          const authEp = DiscoveryDoc.authorization_endpoint
+          const authScopes = DiscoveryDoc.scopes_supported
+          const redirectURI = window.location.href.split("#")[0]
+          const finalRedirectURI = redirectURI + (redirectURI.endsWith("/") ? "openid" : "/openid")
+
+          const nonce = getRandomString(16)
+          storage.setItem(OPEN_ID_NONCE_KEY, nonce)
+
+          // ログアウトフラグを削除（次回は通常のフローに戻る）
+          storage.removeItem(LOGOUT_FLAG_KEY)
+
+          // 強制的にKeycloakのログイン画面に遷移するためのパラメータを追加
+          const authURL = buildOpenIDAuthURL(authEp, authScopes, finalRedirectURI, clientId, nonce)
+          window.location.href = authURL + "&prompt=login"
+        } else {
           console.warn("Discovery document received, but 'authorization_endpoint' is missing")
         }
-      }else{
+      } else {
         console.warn("GetDiscoveryDoc response is missing expected properties (DiscoveryDoc or clientId)", response)
       }
     }).catch(error => {
