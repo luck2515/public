@@ -26,12 +26,8 @@ import storage from "local-storage-fallback"
 
 // Login.jsと同じキーを使用
 const LOGOUT_FLAG_KEY = 'minioLoggedOut'
-// OpenIDプロバイダー内のアカウント管理ページのパス（Keycloak 16.1.1向け）
-const KEYCLOAK_ACCOUNT_PATHS = [
-  '/auth/realms/{realm}/account/#/security/signingin',  // Keycloak 16.1.1のセキュリティ設定
-  '/auth/realms/{realm}/account/#/password',           // Keycloak 16.1.1のパスワード変更
-  '/auth/realms/{realm}/account/'                      // Keycloak 16.1.1のアカウントトップ
-];
+// Keycloakアカウント管理の固定パス
+const KEYCLOAK_ACCOUNT_PATH = '/auth/realms/{realm}/account';
 
 export class BrowserDropdown extends React.Component {
   constructor(props) {
@@ -50,7 +46,6 @@ export class BrowserDropdown extends React.Component {
     // ディスカバリードキュメントを取得して保存
     web.GetDiscoveryDoc().then(response => {
       if (response && response.DiscoveryDoc) {
-        console.log("DiscoveryDoc in BrowserDropdown:", response.DiscoveryDoc);
         this.setState({ discoveryDoc: response.DiscoveryDoc });
       }
     }).catch(error => {
@@ -78,73 +73,35 @@ export class BrowserDropdown extends React.Component {
     const { discoveryDoc } = this.state;
     if (discoveryDoc && discoveryDoc.issuer) {
       try {
-        // Keycloakのアカウント管理ページのURLを構築
+        // IssuerのURLからレルム名を抽出
         const issuerUrl = discoveryDoc.issuer;
-        console.log("Issuer URL:", issuerUrl);
+        let realmName = "master"; // デフォルト値
         
-        // レルム名を抽出 (issuerUrlから)
-        let realmName = "";
         const realmMatch = issuerUrl.match(/\/realms\/([^\/]+)/);
         if (realmMatch && realmMatch[1]) {
           realmName = realmMatch[1];
-        } else {
-          // レルム名が見つからない場合はデフォルト値
-          console.warn("Realm name not found in issuer URL, using 'master' as fallback");
-          realmName = "master";
         }
-        console.log("Realm name:", realmName);
         
-        // Keycloak 16.1.1のURLパターンに合わせてベースURLを構築
+        // ベースURLを抽出
         let baseUrl = issuerUrl;
-        if (issuerUrl.includes('/auth/realms/')) {
-          baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/auth/realms/'));
-        } else if (issuerUrl.includes('/realms/')) {
+        if (issuerUrl.includes('/realms/')) {
           baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/realms/'));
         }
-        console.log("Base URL:", baseUrl);
         
-        // プライマリアカウントパスを選択し、{realm}をレルム名に置き換え
-        let accountUrl = KEYCLOAK_ACCOUNT_PATHS[0].replace('{realm}', realmName);
-        
-        // URLを構築
+        // アカウント管理URLを構築（固定パスを使用）
+        const accountUrl = KEYCLOAK_ACCOUNT_PATH.replace('{realm}', realmName);
         const fullAccountUrl = baseUrl + accountUrl;
-        console.log("Account management URL:", fullAccountUrl);
         
         // 新しいタブでKeycloakのアカウント管理ページを開く
         window.open(fullAccountUrl, '_blank');
-        
-        // 代替パスもログ出力
-        KEYCLOAK_ACCOUNT_PATHS.slice(1).forEach(path => {
-          const altUrl = baseUrl + path.replace('{realm}', realmName);
-          console.log("Alternative Keycloak account URL:", altUrl);
-        });
       } catch (error) {
-        console.error("Error building Keycloak account URL:", error);
-        // エラー時はフォールバックとしてKeycloakのベースURL + /auth/を開く
-        try {
-          const issuerUrl = discoveryDoc.issuer;
-          let baseUrl = issuerUrl;
-          
-          if (issuerUrl.includes('/auth/realms/')) {
-            baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/auth/realms/')) + '/auth/';
-          } else if (issuerUrl.includes('/realms/')) {
-            baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/realms/')) + '/auth/';
-          }
-          
-          console.log("Fallback: Opening Keycloak base URL:", baseUrl);
-          window.open(baseUrl, '_blank');
-        } catch (fallbackError) {
-          console.error("Failed to open even fallback URL:", fallbackError);
-          // 最終手段：モーダルを表示
-          this.setState({
-            showChangePasswordModal: true
-          });
-        }
+        console.error("Error opening Keycloak account page:", error);
+        this.setState({ showChangePasswordModal: true });
       }
       return;
     }
 
-    // それ以外は従来通りモーダルを表示
+    // OpenID連携でない場合は従来通りモーダルを表示
     this.setState({
       showChangePasswordModal: true
     });
