@@ -26,8 +26,11 @@ import storage from "local-storage-fallback"
 
 // Login.jsと同じキーを使用
 const LOGOUT_FLAG_KEY = 'minioLoggedOut'
-// OpenIDプロバイダー内のアカウント管理ページのパス
-const KEYCLOAK_ACCOUNT_PATH = '/account/#/security/signingin'; // Keycloakの標準パス
+// OpenIDプロバイダー内のアカウント管理ページのパス（異なる可能性があるパターンを定義）
+const KEYCLOAK_ACCOUNT_PATHS = [
+  '/account/#/security/signingin',  // Keycloak新UIのパス
+  '/account/password',              // Keycloak旧UIのパス
+];
 
 export class BrowserDropdown extends React.Component {
   constructor(props) {
@@ -72,10 +75,21 @@ export class BrowserDropdown extends React.Component {
     
     // サーバー情報からユーザー情報を取得
     const { serverInfo } = this.props;
-    const isOpenIDUser = serverInfo && serverInfo.userInfo && serverInfo.userInfo.isOpenID;
     
-    // ディスカバリードキュメントとIssuer情報があり、OpenIDユーザーならKeycloakアカウント管理ページに遷移
+    // デバッグ用にユーザー情報をログ出力
+    console.log("User info:", serverInfo && serverInfo.userInfo);
+    
+    // OpenIDユーザーかどうかを確認
+    // 注: Minioは非IAMユーザー（OpenIDを含む）に対してパスワード変更を許可しないため
+    // まずOpenIDユーザーかどうかを確認し、OpenIDの場合はKeycloakに直接遷移する
+    const isOpenIDUser = serverInfo && 
+                        serverInfo.userInfo && 
+                        (serverInfo.userInfo.isOpenID === true || !serverInfo.userInfo.isIAMUser);
+    
+    // ディスカバリードキュメントとIssuer情報の確認
     const { discoveryDoc } = this.state;
+    console.log("Discovery doc:", discoveryDoc);
+    
     if (isOpenIDUser && discoveryDoc && discoveryDoc.issuer) {
       // Keycloakのアカウント管理ページのURLを構築
       const issuerUrl = discoveryDoc.issuer;
@@ -90,16 +104,23 @@ export class BrowserDropdown extends React.Component {
         baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/realms/'));
       }
       
-      // 末尾の "/auth" がある場合は残す（Keycloakの一般的な設定）
-      if (!baseUrl.endsWith('/auth')) {
+      // 末尾に "/auth" を追加（もしなければ）
+      if (!baseUrl.endsWith('/auth') && !baseUrl.includes('/auth/')) {
         baseUrl = baseUrl + '/auth';
       }
       
-      const accountUrl = baseUrl + KEYCLOAK_ACCOUNT_PATH;
-      console.log("Account management URL:", accountUrl);
+      // プライマリのパスを使用
+      const primaryAccountUrl = baseUrl + KEYCLOAK_ACCOUNT_PATHS[0];
+      console.log("Primary account management URL:", primaryAccountUrl);
       
-      // 新しいタブでKeycloakのアカウント管理ページを開く
-      window.open(accountUrl, '_blank');
+      // アカウント管理ページに遷移
+      window.open(primaryAccountUrl, '_blank');
+      
+      // 注意：以下のコメントは情報提供のみを目的としています
+      console.log("Alternative URL patterns that might work if the primary URL fails:");
+      KEYCLOAK_ACCOUNT_PATHS.slice(1).forEach(path => {
+        console.log("- " + baseUrl + path);
+      });
     } else {
       // OpenID連携でない場合は従来通りModalを表示
       this.setState({
