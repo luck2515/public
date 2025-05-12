@@ -26,41 +26,94 @@ import storage from "local-storage-fallback"
 
 // Login.jsと同じキーを使用
 const LOGOUT_FLAG_KEY = 'minioLoggedOut'
+// OpenIDプロバイダー内のアカウント管理ページのパス
+const KEYCLOAK_ACCOUNT_PATH = '/account/#/security/signingin'; // Keycloakの標準パス
 
 export class BrowserDropdown extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       showAboutModal: false,
-      showChangePasswordModal: false
+      showChangePasswordModal: false,
+      discoveryDoc: null
     }
   }
+  
+  componentDidMount() {
+    const { fetchServerInfo } = this.props
+    fetchServerInfo()
+    
+    // ディスカバリードキュメントを取得して保存
+    web.GetDiscoveryDoc().then(response => {
+      if (response && response.DiscoveryDoc) {
+        console.log("DiscoveryDoc in BrowserDropdown:", response.DiscoveryDoc);
+        this.setState({ discoveryDoc: response.DiscoveryDoc });
+      }
+    }).catch(error => {
+      console.error("Failed to get discovery document", error);
+    });
+  }
+  
   showAbout(e) {
     e.preventDefault()
     this.setState({
       showAboutModal: true
     })
   }
+  
   hideAbout() {
     this.setState({
       showAboutModal: false
     })
   }
+  
   showChangePassword(e) {
     e.preventDefault()
-    this.setState({
-      showChangePasswordModal: true
-    })
+    
+    // サーバー情報からユーザー情報を取得
+    const { serverInfo } = this.props;
+    const isOpenIDUser = serverInfo && serverInfo.userInfo && serverInfo.userInfo.isOpenID;
+    
+    // ディスカバリードキュメントとIssuer情報があり、OpenIDユーザーならKeycloakアカウント管理ページに遷移
+    const { discoveryDoc } = this.state;
+    if (isOpenIDUser && discoveryDoc && discoveryDoc.issuer) {
+      // Keycloakのアカウント管理ページのURLを構築
+      const issuerUrl = discoveryDoc.issuer;
+      console.log("Issuer URL:", issuerUrl);
+      
+      // IssuerのURLからベースURLを抽出
+      // 例: https://keycloak.example.com/auth/realms/minio -> https://keycloak.example.com/auth
+      let baseUrl = issuerUrl;
+      
+      // "/realms/" または "/auth/realms/" パターンを処理
+      if (issuerUrl.includes('/realms/')) {
+        baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/realms/'));
+      }
+      
+      // 末尾の "/auth" がある場合は残す（Keycloakの一般的な設定）
+      if (!baseUrl.endsWith('/auth')) {
+        baseUrl = baseUrl + '/auth';
+      }
+      
+      const accountUrl = baseUrl + KEYCLOAK_ACCOUNT_PATH;
+      console.log("Account management URL:", accountUrl);
+      
+      // 新しいタブでKeycloakのアカウント管理ページを開く
+      window.open(accountUrl, '_blank');
+    } else {
+      // OpenID連携でない場合は従来通りModalを表示
+      this.setState({
+        showChangePasswordModal: true
+      });
+    }
   }
+  
   hideChangePassword() {
     this.setState({
       showChangePasswordModal: false
     })
   }
-  componentDidMount() {
-    const { fetchServerInfo } = this.props
-    fetchServerInfo()
-  }
+  
   logout(e) {
     e.preventDefault()
     
@@ -70,6 +123,7 @@ export class BrowserDropdown extends React.Component {
     web.Logout()
     history.replace("/login")
   }
+  
   render() {
     const { serverInfo } = this.props
     return (
