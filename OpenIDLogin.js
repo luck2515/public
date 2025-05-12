@@ -33,7 +33,9 @@ export class OpenIDLogin extends React.Component {
     super(props)
     this.state = {
       clientID: "",
-      discoveryDoc: {}
+      discoveryDoc: {},
+      isLoading: true,
+      processingToken: false
     }
     this.clientIDChange = this.clientIDChange.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
@@ -90,9 +92,15 @@ export class OpenIDLogin extends React.Component {
 
   componentDidMount() {
     const values = qs.parse(this.props.location.hash)
+    
+    if (values.error || values.id_token) {
+      this.setState({ processingToken: true });
+    }
+    
     if (values.error) {
       this.props.showAlert("danger", values.error_description)
-      return
+      this.setState({ isLoading: false, processingToken: false });
+      return;
     }
 
     if (values.id_token) {
@@ -100,17 +108,22 @@ export class OpenIDLogin extends React.Component {
       const tokenJSON = jwtDecode(values.id_token)
       if (storage.getItem(OPEN_ID_NONCE_KEY) !== tokenJSON.nonce) {
         this.props.showAlert("danger", "Invalid auth token")
-        return
+        this.setState({ isLoading: false, processingToken: false });
+        return;
       }
-
-      // Store id_token in localStorage for logout
-      storage.setItem('id_token', values.id_token);
 
       web.LoginSTS({ token: values.id_token }).then(() => {
         storage.removeItem(OPEN_ID_NONCE_KEY)
-        this.forceUpdate()
-        return
-      })
+        this.setState({ isLoading: false, processingToken: false }, () => {
+          this.forceUpdate();
+        });
+        return;
+      }).catch(error => {
+        this.setState({ isLoading: false, processingToken: false });
+        this.props.showAlert("danger", error.message || "Login failed");
+      });
+    } else {
+      this.setState({ isLoading: false });
     }
   }
 
@@ -118,14 +131,23 @@ export class OpenIDLogin extends React.Component {
     document.body.classList.remove("is-guest")
   }
 
-  render() {
-    const { clearAlert, alert } = this.props
-    if (web.LoggedIn()) {
-      return <Redirect to={"/"} />
-    }
-    let alertBox = <Alert {...alert} onDismiss={clearAlert} />
-    // Make sure you don't show a fading out alert box on the initial web-page load.
-    if (!alert.message) alertBox = ""
+  renderLoading() {
+    return (
+      <div className="login loading-view">
+        <div className="page-load" style={{ position: 'relative', background: 'transparent' }}>
+          <div className="pl-inner">
+            <img src={logo} alt="Loading" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  renderLoginForm() {
+    const { clearAlert, alert } = this.props;
+    let alertBox = <Alert {...alert} onDismiss={clearAlert} />;
+    if (!alert.message) alertBox = "";
+    
     return (
       <div className="login">
         {alertBox}
@@ -154,7 +176,19 @@ export class OpenIDLogin extends React.Component {
           <div className="lf-server">{window.location.host}</div>
         </div>
       </div>
-    )
+    );
+  }
+
+  render() {
+    if (web.LoggedIn()) {
+      return <Redirect to={"/"} />
+    }
+
+    if (this.state.isLoading || this.state.processingToken) {
+      return this.renderLoading();
+    }
+
+    return this.renderLoginForm();
   }
 }
 
