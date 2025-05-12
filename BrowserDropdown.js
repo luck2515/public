@@ -72,61 +72,32 @@ export class BrowserDropdown extends React.Component {
   
   showChangePassword(e) {
     e.preventDefault()
-    
-    // サーバー情報からユーザー情報を取得
-    const { serverInfo } = this.props;
-    
-    // デバッグ用にユーザー情報をログ出力
-    console.log("User info:", serverInfo && serverInfo.userInfo);
-    
-    // OpenIDユーザーかどうかを確認
-    // 注: Minioは非IAMユーザー（OpenIDを含む）に対してパスワード変更を許可しないため
-    // まずOpenIDユーザーかどうかを確認し、OpenIDの場合はKeycloakに直接遷移する
-    const isOpenIDUser = serverInfo && 
-                        serverInfo.userInfo && 
-                        (serverInfo.userInfo.isOpenID === true || !serverInfo.userInfo.isIAMUser);
-    
-    // ディスカバリードキュメントとIssuer情報の確認
+
+    // ディスカバリードキュメントとIssuer情報があればKeycloakアカウント管理ページに遷移
     const { discoveryDoc } = this.state;
-    console.log("Discovery doc:", discoveryDoc);
-    
-    if (isOpenIDUser && discoveryDoc && discoveryDoc.issuer) {
+    if (discoveryDoc && discoveryDoc.issuer) {
       // Keycloakのアカウント管理ページのURLを構築
       const issuerUrl = discoveryDoc.issuer;
-      console.log("Issuer URL:", issuerUrl);
-      
-      // IssuerのURLからベースURLを抽出
-      // 例: https://keycloak.example.com/auth/realms/minio -> https://keycloak.example.com/auth
       let baseUrl = issuerUrl;
-      
-      // "/realms/" または "/auth/realms/" パターンを処理
       if (issuerUrl.includes('/realms/')) {
         baseUrl = issuerUrl.substring(0, issuerUrl.indexOf('/realms/'));
       }
-      
-      // 末尾に "/auth" を追加（もしなければ）
       if (!baseUrl.endsWith('/auth') && !baseUrl.includes('/auth/')) {
         baseUrl = baseUrl + '/auth';
       }
-      
-      // プライマリのパスを使用
       const primaryAccountUrl = baseUrl + KEYCLOAK_ACCOUNT_PATHS[0];
-      console.log("Primary account management URL:", primaryAccountUrl);
-      
-      // アカウント管理ページに遷移
       window.open(primaryAccountUrl, '_blank');
-      
-      // 注意：以下のコメントは情報提供のみを目的としています
-      console.log("Alternative URL patterns that might work if the primary URL fails:");
+      // 代替パスもログ出力
       KEYCLOAK_ACCOUNT_PATHS.slice(1).forEach(path => {
-        console.log("- " + baseUrl + path);
+        console.log("Alternative Keycloak account URL:", baseUrl + path);
       });
-    } else {
-      // OpenID連携でない場合は従来通りModalを表示
-      this.setState({
-        showChangePasswordModal: true
-      });
+      return;
     }
+
+    // それ以外は従来通りモーダルを表示
+    this.setState({
+      showChangePasswordModal: true
+    });
   }
   
   hideChangePassword() {
