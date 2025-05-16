@@ -1,45 +1,33 @@
-// customers/app1/app/runtime-config/route.ts
+// customers/app1/app/runtime-config/route.ts (または該当のAPIルート)
 import { NextResponse } from 'next/server';
-import getConfig from 'next/config';
-
-export const dynamic = 'force-dynamic'; // キャッシュを無効化（念のため）
 
 export async function GET(request: Request) {
-  console.log('--- [API Route] START ---');
-  console.log(`NODE_ENV in API route: ${process.env.NODE_ENV}`);
-
-  const configFromGetConfig = getConfig();
-
-  console.log('[API Route] Value of getConfig():', configFromGetConfig); // ここが undefined かどうか
-  console.log('[API Route] Type of getConfig() result:', typeof configFromGetConfig);
-
-  if (typeof configFromGetConfig === 'undefined') {
-    console.error('[API Route] CRITICAL: getConfig() returned undefined.');
-    return NextResponse.json({
-      error: 'getConfig() returned undefined. This is a critical issue.',
-      configValue: String(configFromGetConfig) // undefinedを文字列化して返す
-    }, { status: 500 });
+  console.log('--- [API Route] All available process.env variables ---');
+  let envVarsForResponse = {};
+  for (const key in process.env) {
+    // Podログには全て出力
+    console.log(`[ENV_FROM_API_ROUTE] ${key}=${process.env[key]}`);
+    // レスポンスに含めるのは文字列型のものや、シリアライズ可能なものに限定した方が安全
+    if (typeof process.env[key] === 'string') {
+      envVarsForResponse[key] = process.env[key];
+    }
   }
+  console.log('--- [API Route] End of process.env variables ---');
 
-  // configFromGetConfig がオブジェクトであることを期待
-  if (configFromGetConfig && typeof configFromGetConfig === 'object') {
-    console.log('[API Route] Keys in config object:', Object.keys(configFromGetConfig));
-    console.log('[API Route] serverRuntimeConfig from getConfig():', configFromGetConfig.serverRuntimeConfig);
-    console.log('[API Route] publicRuntimeConfig from getConfig():', configFromGetConfig.publicRuntimeConfig);
+  const specificVarName = "YOUR_K8S_ENV_VAR_NAME"; // Kubernetesで設定した実際の環境変数名 (大文字・小文字を正確に)
+  const specificVarValue = process.env[specificVarName];
 
-    return NextResponse.json({
-      message: 'Config retrieved.',
-      serverConfig: configFromGetConfig.serverRuntimeConfig || 'serverRuntimeConfig not found or undefined',
-      publicConfig: configFromGetConfig.publicRuntimeConfig || 'publicRuntimeConfig not found or undefined',
-      rawConfig: configFromGetConfig, // デバッグ用に全体を返す
-    });
-  } else {
-    console.error('[API Route] getConfig() did not return an object or was undefined.');
-    return NextResponse.json({
-      error: 'getConfig() did not return a valid object or was undefined.',
-      configValue: String(configFromGetConfig),
-      configType: typeof configFromGetConfig,
-    }, { status: 500 });
-  }
-  console.log('--- [API Route] END ---'); // 通常ここまで到達しない場合がある
+  console.log(`[API Route] Value of ${specificVarName}: ${specificVarValue}`);
+
+  return NextResponse.json({
+    message: "Checked process.env from API Route",
+    retrievedSpecificVar: {
+      name: specificVarName,
+      value: specificVarValue === undefined ? "NOT_FOUND_OR_UNDEFINED" : specificVarValue,
+    },
+    // 注意: 全ての環境変数をレスポンスに含めるのはセキュリティリスクになる可能性があるため、
+    // デバッグ目的でのみ、かつ必要なものに絞って行うこと。
+    // もし多くの環境変数を見たい場合は、Podログを参照するのが基本。
+    // sampleOfEnvVars: envVarsForResponse, // デバッグ用に一部の環境変数を返す（本番では注意）
+  });
 }
