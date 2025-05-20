@@ -1,0 +1,113 @@
+package main
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+
+	// MinIOの内部パッケージをインポートします。
+	// これらのパスは、MinIOのソース構造やGo Modulesの設定によって調整が必要な場合があります。
+	// 例: "github.com/minio/minio/cmd"
+	// 例: "github.com/minio/minio/pkg/madmin"
+	// 例: "github.com/minio/minio/pkg/auth"
+	// 実際のMinIOのバージョンに合わせてください。
+	// この例では、ローカルのMinIOソースツリーからの相対パスを想定してみます。
+	// (ただし、これは一般的なGoのプロジェクト構造とは異なるため、通常はgo.modでバージョン指定します)
+
+	// 仮に、このツールが minio/cmd/decrypt-tool/ にあると仮定し、
+	// minio/pkg や minio/cmd 以下のパッケージを参照する場合のインポートパスの例
+	// ※ 実際のMinIOのモジュールパスに合わせてください。
+	// 例: "github.com/minio/minio/pkg/madmin"
+	// 例: "github.com/minio/minio/pkg/auth" (auth.Credentialsのため)
+	// 例: "github.com/minio/minio/cmd" (UserIdentityのため)
+	// この部分は先輩の環境に合わせて修正が必要です。
+	madmin "github.com/minio/minio/pkg/madmin" // 暗号化/復号処理
+	auth "github.com/minio/minio/pkg/auth"   // auth.Credentials 構造体
+)
+
+// cmd/iam.go から UserIdentity 構造体の定義を拝借 (または適切にインポート)
+// ※ cmdパッケージは通常ライブラリとしてインポートできないため、
+//    必要な構造体定義をここにコピーするか、
+//    もしMinIO側で外部利用可能な形で提供されていればそれを使います。
+//    ここでは簡単のため、構造体定義をコピーするアプローチを取ります。
+type UserIdentity struct {
+	Version     int              `json:"version"`
+	Credentials auth.Credentials `json:"credentials"`
+}
+
+func main() {
+	rootUser := flag.String("root-user", "", "MinIO Root User (Access Key)")
+	rootPassword := flag.String("root-password", "", "MinIO Root Password (Secret Key)")
+	identityFilePath := flag.String("identity-file", "", "Path to the encrypted identity.json file")
+
+	flag.Parse()
+
+	if *rootUser == "" || *rootPassword == "" || *identityFilePath == "" {
+		fmt.Println("Usage: go run decrypt_identity.go -root-user <user> -root-password <password> -identity-file <path>")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	// ルートクレデンシャルを結合してパスワードとして使用
+	// madmin.DecryptData は string のパスワードを期待するのでこれでOK
+	password := *rootUser + *rootPassword
+
+	// identity.json ファイルを読み込む
+	encryptedData, err := ioutil.ReadFile(*identityFilePath)
+	if err != nil {
+		log.Fatalf("Failed to read identity file %s: %v", *identityFilePath, err)
+	}
+
+	// データを復号
+	// madmin.DecryptData は io.Reader を期待するので、bytes.NewReader を使う
+	decryptedData, err := madmin.DecryptData(password, bytes.NewReader(encryptedData))
+	if err != nil {
+		// madmin.ErrMaliciousData はパスワードが違うかデータ破損の場合に返る
+		if err == madmin.ErrMaliciousData {
+			log.Fatalf("Failed to decrypt data: Incorrect root credentials or corrupted data. (%v)", err)
+		}
+		log.Fatalf("Failed to decrypt data: %v", err)
+	}
+
+	// 復号されたJSONをパース
+	var userIdentity UserIdentity
+	if err := json.Unmarshal(decryptedData, &userIdentity); err != nil {
+		log.Fatalf("Failed to unmarshal decrypted JSON: %v\nDecrypted data (first 200 bytes): %s", err, string(decryptedData[:min(200, len(decryptedData))]))
+	}
+
+	// 結果の表示
+	fmt.Println("Successfully decrypted identity.json!")
+	fmt.Printf("  Target User Access Key: %s\n", userIdentity.Credentials.AccessKey)
+	fmt.Printf("  Target User Secret Key: %s\n", userIdentity.Credentials.SecretKey) // ✨これが求めるシークレットキー！
+	fmt.Printf("  Target User Status:     %s\n", userIdentity.Credentials.Status)
+	if !userIdentity.Credentials.Expiration.IsZero() {
+		fmt.Printf("  Target User Expiration: %s\n", userIdentity.Credentials.Expiration)
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// --- 依存する可能性のあるMinIO内部パッケージのスタブ (もし直接インポートが難しい場合) ---
+// 実際には、MinIOのソースコードから `pkg/madmin/encrypt.go` と `pkg/argon2/argon2.go` (およびその依存)
+// が正しく参照されるようにGo Modulesを設定する必要があります。
+//
+// 例: pkg/madmin/encrypt.go で使われている argon2.NewIDKey をスタブするとしたら...
+// package argon2
+// func NewIDKey(time uint32, memory uint32, threads uint8) func(password, salt, key, extra []byte, keyLen uint32) []byte {
+//    // ... MinIOの実際の argon2.NewIDKey の実装に基づくか、
+//    //     MinIOのパッケージを直接利用できるようにする
+//    log.Fatal("argon2.NewIDKey needs to be properly linked or implemented")
+//    return nil
+//}
+//
+// ※ このスタブ方法は最終手段であり、基本的にはMinIOの既存パッケージを go get や go.mod の replace
+//   ディレクティブなどで正しく参照できるようにするのが望ましいです。
